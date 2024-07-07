@@ -1,12 +1,11 @@
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
-from sqlmodel import Session, select
-
 from app.api.admin.model.user import User
 from app.core.config import settings
 from app.core.security import verify_password
-from app.utils import generate_password_reset_token
+from app.utils.utils import generate_password_reset_token
+from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 
 def test_get_access_token(client: TestClient) -> None:

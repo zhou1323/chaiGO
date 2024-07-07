@@ -1,9 +1,8 @@
 from app.api.admin.model.token import Message
+from app.api.deps import get_current_active_superuser
+from app.utils.utils import generate_test_email, send_email
 from fastapi import APIRouter, Depends
 from pydantic.networks import EmailStr
-
-from app.api.deps import get_current_active_superuser
-from app.utils import generate_test_email, send_email
 
 router = APIRouter()
 

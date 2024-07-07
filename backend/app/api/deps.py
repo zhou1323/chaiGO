@@ -1,22 +1,21 @@
 from collections.abc import Generator
 from typing import Annotated
 
+import jwt
 from app.api.admin.model.token import TokenPayload
 from app.api.admin.model.user import User
-import jwt
+from app.core import security
+from app.core.config import settings
+from app.core.db_postgres import engine
+from app.core.security import redis_token_authenticate
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 from sqlmodel import Session
 
-from app.core import security
-from app.core.config import settings
-from app.core.db import engine
-
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
-)
+# Used by swagger, to get the access token
+reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/sign-in")
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -39,6 +38,7 @@ def get_current_user(session: SessionDep, token: TokenDep) -> User:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
+    redis_token_authenticate(id=token_data.sub, token=token)
     user = session.get(User, token_data.sub)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

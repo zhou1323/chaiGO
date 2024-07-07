@@ -38,7 +38,7 @@ def test_create_user_new_email(
         client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     with (
-        patch("app.utils.send_email", return_value=None),
+        patch("app.utils.utils.send_email", return_value=None),
         patch("app.core.config.settings.SMTP_HOST", "smtp.example.com"),
         patch("app.core.config.settings.SMTP_USER", "admin@example.com"),
     ):
@@ -189,7 +189,7 @@ def test_update_user_me(
     user_db = db.exec(user_query).first()
     assert user_db
     assert user_db.email == email
-    assert user_db.full_name == full_name
+    assert user_db.username == full_name
 
 
 def test_update_password_me(
@@ -302,7 +302,7 @@ def test_register_user(client: TestClient, db: Session) -> None:
         user_db = db.exec(user_query).first()
         assert user_db
         assert user_db.email == username
-        assert user_db.full_name == full_name
+        assert user_db.username == full_name
         assert verify_password(password, user_db.hashed_password)
 
 
@@ -365,7 +365,7 @@ def test_update_user(
     user_db = db.exec(user_query).first()
     db.refresh(user_db)
     assert user_db
-    assert user_db.full_name == "Updated_full_name"
+    assert user_db.username == "Updated_full_name"
 
 
 def test_update_user_not_exists(
