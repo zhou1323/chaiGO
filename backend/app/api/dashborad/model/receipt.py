@@ -1,5 +1,4 @@
-from sqlmodel import Field, Relationship, SQLModel
-from app.api.admin.model.user import User
+from sqlmodel import Field, SQLModel
 
 
 # Shared properties
@@ -22,8 +21,8 @@ class ItemUpdate(ItemBase):
 class Item(ItemBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     title: str = Field(max_length=255)
-    owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
-    owner: User | None = Relationship(back_populates="items")
+    # owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
+    # owner: User | None = Relationship(back_populates="items")
 
 
 # Properties to return via API, id is always required

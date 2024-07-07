@@ -1,9 +1,12 @@
 import os
 from logging.config import fileConfig
+from urllib.parse import quote_plus
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
+load_dotenv()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -18,9 +21,9 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 
-from app.models import SQLModel  # noqa
+from app.api.admin.model import SQLModel as AdminModel  # noqa
 
-target_metadata = SQLModel.metadata
+target_metadata = [AdminModel.metadata]
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -34,7 +37,7 @@ def get_url():
     server = os.getenv("POSTGRES_SERVER", "db")
     port = os.getenv("POSTGRES_PORT", "5432")
     db = os.getenv("POSTGRES_DB", "app")
-    return f"postgresql+psycopg://{user}:{password}@{server}:{port}/{db}"
+    return f"postgresql+psycopg://{user}:{quote_plus(password)}@{server}:{port}/{db}"
 
 
 def run_migrations_offline():

@@ -1,10 +1,7 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends
-
 from app.api.admin.model.token import Message
 from app.api.admin.model.user import (
-    UserRegister,
     UsersPublic,
     UserCreate,
     UserPublic,
@@ -18,6 +15,7 @@ from app.api.deps import (
     SessionDep,
     get_current_active_superuser,
 )
+from fastapi import APIRouter, Depends
 
 router = APIRouter()
 
@@ -43,11 +41,6 @@ def read_user_by_id(
 )
 def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     return user_service.create_user(session, user_in)
-
-
-@router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> Any:
-    return user_service.register_user(session, user_in)
 
 
 @router.patch(

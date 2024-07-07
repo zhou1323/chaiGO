@@ -1,31 +1,37 @@
 from typing import Annotated, Any
 
+from app.api.admin.model.user import UserPublic, UserRegister, ResetPassword
+from app.api.admin.service.user_service import user_service
+from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.common.response.response_schema import ResponseModel, response_base
 from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.admin.model.user import UserPublic
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
-from app.core import security
-from app.core.config import settings
-from app.api.admin.service.user_service import user_service
-from app.core.security import get_password_hash
-from app.api.admin.model.token import Token, NewPassword, Message
-from app.utils import (
-    generate_password_reset_token,
-    generate_reset_password_email,
-    send_email,
-    verify_password_reset_token,
-)
-
 router = APIRouter()
 
 
-@router.post("/login/access-token")
-def login_access_token(
+# Use the OAuth2 mechanism provided by fastapi
+@router.post("/sign-in")
+async def login(
     session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
-) -> Token:
-    return user_service.login(session, form_data.username, form_data.password)
+) -> ResponseModel:
+    data = await user_service.login(
+        session=session, email=form_data.username, password=form_data.password
+    )
+    return await response_base.success(data=data)
+
+
+@router.post("/sign-up")
+async def sign_up(session: SessionDep, user_in: UserRegister) -> ResponseModel:
+    user_service.register_user(session, user_in)
+    return await response_base.success()
+
+
+@router.post("/sign-out")
+async def logout(user: CurrentUser) -> ResponseModel:
+    user_service.logout(id=user.id)
+    return await response_base.success()
 
 
 @router.post("/login/test-token", response_model=UserPublic)
@@ -36,14 +42,18 @@ def test_token(current_user: CurrentUser) -> Any:
     return current_user
 
 
-@router.post("/password-recovery/{email}")
-def recover_password(email: str, session: SessionDep) -> Message:
-    return user_service.recover_password(session, email)
+@router.get("/recover-password")
+async def recover_password(email: str, session: SessionDep) -> ResponseModel:
+    user_service.recover_password(session, email)
+    return await response_base.success()
 
 
 @router.post("/reset-password/")
-def reset_password(session: SessionDep, body: NewPassword) -> Message:
-    return user_service.reset_password(session, body.token, body.new_password)
+async def reset_password(session: SessionDep, body: ResetPassword) -> ResponseModel:
+    user_service.reset_password(
+        session=session, token=body.token, new_password=body.new_password
+    )
+    return await response_base.success()
 
 
 @router.post(
@@ -52,4 +62,4 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
     response_class=HTMLResponse,
 )
 def recover_password_html_content(email: str, session: SessionDep) -> Any:
-    return user_service.recover_password_html_content(session, email)
+    return user_service.reset_password_html_content(session, email)

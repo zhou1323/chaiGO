@@ -1,6 +1,7 @@
 import secrets
 import warnings
 from typing import Annotated, Any, Literal
+from urllib.parse import quote_plus
 
 from pydantic import (
     AnyUrl,
@@ -29,8 +30,8 @@ class Settings(BaseSettings):
     )
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
-    # 60 minutes * 24 hours * 8 days = 8 days
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    # 60seconds * 60 minutes * 24 hours * 8 days = 8 days
+    ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 8
     DOMAIN: str = "localhost"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
@@ -42,9 +43,9 @@ class Settings(BaseSettings):
             return f"http://{self.DOMAIN}"
         return f"https://{self.DOMAIN}"
 
-    BACKEND_CORS_ORIGINS: Annotated[
-        list[AnyUrl] | str, BeforeValidator(parse_cors)
-    ] = []
+    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = (
+        []
+    )
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
@@ -60,11 +61,19 @@ class Settings(BaseSettings):
         return MultiHostUrl.build(
             scheme="postgresql+psycopg",
             username=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD,
+            password=quote_plus(
+                self.POSTGRES_PASSWORD
+            ),  # Some symbols like @ can't be processed otherwise
             host=self.POSTGRES_SERVER,
             port=self.POSTGRES_PORT,
             path=self.POSTGRES_DB,
         )
+
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_PASSWORD: str
+    REDIS_DATABASE: int
+    REDIS_TIMEOUT: int = 5
 
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
