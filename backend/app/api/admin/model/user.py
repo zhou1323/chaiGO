@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING, List
+
+from app.api.admin.model.token import Token
 from app.common.model import AliasMixin
 from pydantic import EmailStr
-from sqlmodel import Field
+from sqlmodel import Field, SQLModel, Relationship
 
+if TYPE_CHECKING:
+    from app.api.dashboard.model.receipt import Receipt
 
 # Shared properties
 class UserBase(AliasMixin):
@@ -45,9 +50,11 @@ class ResetPassword(AliasMixin):
 
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
+    __tablename__ = 'user'
+
     id: int | None = Field(default=None, primary_key=True)
     hashed_password: str
-    # items: list["Item"] = Relationship(back_populates="owner")
+    receipts: List["Receipt"] = Relationship(back_populates="owner")
 
 
 # Properties to return via API, id is always required
@@ -56,7 +63,7 @@ class UserPublic(UserBase):
 
 
 class UsersPublic(SQLModel):
-    data: list[UserPublic]
+    data: List[UserPublic]
     count: int
 
 

@@ -14,7 +14,7 @@ from app.api.admin.model.user import (
     UserUpdate,
     UserWithToken,
 )
-from app.api.dashborad.model.receipt import Item
+from app.api.dashboard.model.receipt import Receipt
 from app.api.deps import SessionDep, CurrentUser
 from app.core import security
 from app.core.config import settings
@@ -213,7 +213,7 @@ class UserService:
                 status_code=403,
                 detail="Super users are not allowed to delete themselves",
             )
-        statement = delete(Item).where(col(Item.owner_id) == user_id)
+        statement = delete(Receipt).where(col(Receipt.owner_id) == user_id)
         session.exec(statement)
         session.delete(user)
         session.commit()
@@ -260,7 +260,7 @@ class UserService:
                 status_code=403,
                 detail="Super users are not allowed to delete themselves",
             )
-        statement = delete(Item).where(col(Item.owner_id) == current_user.id)
+        statement = delete(Receipt).where(col(Receipt.owner_id) == current_user.id)
         session.exec(statement)
         session.delete(current_user)
         session.commit()
