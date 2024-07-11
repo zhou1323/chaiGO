@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.core.db_redis import redis_client
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from fastapi_pagination import add_pagination
 from starlette.middleware.cors import CORSMiddleware
 
 
@@ -52,3 +53,5 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+add_pagination(app)

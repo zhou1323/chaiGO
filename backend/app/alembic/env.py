@@ -21,9 +21,13 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 
-from app.api.admin.model import SQLModel as AdminModel  # noqa
+from sqlmodel import SQLModel
 
-target_metadata = [AdminModel.metadata]
+# Must import used tables
+import app.api.admin.model
+import app.api.dashboard.model
+
+target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
