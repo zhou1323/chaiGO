@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING, List
-
+from typing import TYPE_CHECKING, List, Optional
 from app.api.admin.model.token import Token
 from app.common.model import AliasMixin
 from pydantic import EmailStr
@@ -8,12 +7,13 @@ from sqlmodel import Field, SQLModel, Relationship
 if TYPE_CHECKING:
     from app.api.dashboard.model.receipt import Receipt
 
+
 # Shared properties
 class UserBase(AliasMixin):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
-    username: str | None = Field(default=None, max_length=255)
+    username: Optional[str] = Field(default=None, max_length=255)
 
 
 # Properties to receive via API on creation
@@ -23,19 +23,19 @@ class UserCreate(UserBase):
 
 # Properties to receive via API on update, all are optional
 class UserUpdate(UserBase):
-    email: EmailStr | None = Field(default=None, max_length=255)
-    password: str | None = Field(default=None, min_length=8, max_length=40)
+    email: Optional[EmailStr] = Field(default=None, max_length=255)
+    password: Optional[str] = Field(default=None, min_length=8, max_length=40)
 
 
 class UserRegister(SQLModel):
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=40)
-    username: str | None = Field(default=None, max_length=255)
+    username: Optional[str] = Field(default=None, max_length=255)
 
 
 class UserUpdateMe(SQLModel):
-    username: str | None = Field(default=None, max_length=255)
-    email: EmailStr | None = Field(default=None, max_length=255)
+    username: Optional[str] = Field(default=None, max_length=255)
+    email: Optional[EmailStr] = Field(default=None, max_length=255)
 
 
 class UpdatePassword(SQLModel):
@@ -50,9 +50,9 @@ class ResetPassword(AliasMixin):
 
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
-    __tablename__ = 'user'
+    __tablename__ = "user"
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
     receipts: List["Receipt"] = Relationship(back_populates="owner")
 
