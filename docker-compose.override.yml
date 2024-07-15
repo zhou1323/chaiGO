@@ -45,6 +45,11 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    restart: "no"
+    ports:
+      - "6379:6379"
+
   adminer:
     restart: "no"
     ports:
@@ -67,6 +72,10 @@ services:
       SMTP_PORT: "1025"
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=PathPrefix(`/api/v`) || PathPrefix(`/docs`) || PathPrefix(`/redoc`)
+      - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=80
 
   mailcatcher:
     image: schickling/mailcatcher
@@ -75,12 +84,18 @@ services:
       - "1025:1025"
 
   frontend:
-    restart: "no"
+    ports:
+      - "24678:24678"
+    volumes:
+      - ./frontend:/frontend
     build:
       context: ./frontend
-      args:
-        - VITE_API_URL=http://${DOMAIN?Variable not set}
-        - NODE_ENV=development
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.rule=PathPrefix(`/`)
+      - traefik.http.services.${STACK_NAME?Variable not set}-frontend.loadbalancer.server.port=80
+    environment:
+      - NEXT_PUBLIC_BASE_URL==http://localhost
 
 networks:
   traefik-public:

@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:12
+    image: postgres:latest
     restart: always
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
@@ -11,6 +11,17 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+
+  redis:
+    image: redis:latest
+    restart: always
+    volumes:
+      - redis-data:/var/lib/redis/data
+    env_file:
+      - .env
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD?Variable not set}
+    command: redis-server --bind 0.0.0.0 --requirepass ${REDIS_PASSWORD?Variable not set}
 
   adminer:
     image: adminer
@@ -43,6 +54,7 @@ services:
       - default
     depends_on:
       - db
+      - redis
     env_file:
       - .env
     environment:
@@ -62,6 +74,10 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD?Variable not set}
+      - REDIS_DATABASE=${REDIS_DATABASE}
       - SENTRY_DSN=${SENTRY_DSN}
 
     build:
@@ -102,7 +118,6 @@ services:
     build:
       context: ./frontend
       args:
-        - VITE_API_URL=https://${DOMAIN?Variable not set}
         - NODE_ENV=production
     labels:
       - traefik.enable=true
@@ -122,8 +137,11 @@ services:
       # Enable www redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-https.middlewares=${STACK_NAME?Variable not set}-www-redirect
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect,${STACK_NAME?Variable not set}-www-redirect
+    environment:
+      - NEXT_PUBLIC_BASE_URL=https://${DOMAIN?Variable not set}
 volumes:
   app-db-data:
+  redis-data:
 
 networks:
   traefik-public:
