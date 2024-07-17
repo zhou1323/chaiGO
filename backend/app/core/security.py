@@ -5,6 +5,7 @@ import jwt
 from app.core.config import settings
 from app.core.db_redis import redis_client
 from passlib.context import CryptContext
+from fastapi import HTTPException, status
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -22,7 +23,7 @@ async def create_access_token(subject: str | Any, expires_delta: timedelta) -> s
 
 
 async def redis_token_authenticate(id: str, token: str) -> bool:
-    key = f"{settings.TOKEN_REDIS_PREFIX}:{id}:{token}"
+    key = f"{settings.PROJECT_NAME}:{id}:{token}"
     token_verify = await redis_client.get(key)
     if not token_verify:
         raise HTTPException(
