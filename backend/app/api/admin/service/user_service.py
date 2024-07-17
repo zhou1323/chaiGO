@@ -18,6 +18,7 @@ from app.api.dashboard.model.receipt import Receipt
 from app.api.deps import SessionDep, CurrentUser
 from app.core import security
 from app.core.config import settings
+from app.core.db_redis import redis_client
 from app.core.security import get_password_hash, verify_password
 from app.utils.utils import (
     generate_password_reset_token,
