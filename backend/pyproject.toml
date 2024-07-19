@@ -29,6 +29,8 @@ pyjwt = "^2.8.0"
 redis = "^5.0.7"
 asgiref = "^3.8.1"
 fastapi-pagination = "^0.12.26"
+boto3 = "^1.34.144"
+rsa = "^4.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
