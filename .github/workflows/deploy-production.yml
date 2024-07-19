@@ -24,6 +24,13 @@ jobs:
       EMAILS_FROM_EMAIL: ${{ secrets.EMAILS_FROM_EMAIL }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION_NAME: ${{ secrets.AWS_REGION_NAME }}
+      AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
+      CLOUDFRONT_DISTRIBUTION_DOMAIN: ${{ secrets.CLOUDFRONT_DISTRIBUTION_DOMAIN }}
+      CLOUDFRONT_KEY_ID: ${{ secrets.CLOUDFRONT_KEY_ID }}
+      CLOUDFRONT_PRIVATE_KEY_STRING: ${{ secrets.CLOUDFRONT_PRIVATE_KEY_STRING }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     steps:
       - name: Checkout

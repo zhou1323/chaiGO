@@ -75,6 +75,15 @@ class Settings(BaseSettings):
     REDIS_DATABASE: int
     REDIS_TIMEOUT: int = 5
 
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+    AWS_REGION_NAME: str
+    AWS_BUCKET_NAME: str
+
+    CLOUDFRONT_DISTRIBUTION_DOMAIN: str
+    CLOUDFRONT_KEY_ID: str
+    CLOUDFRONT_PRIVATE_KEY_STRING: str
+
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
     SMTP_PORT: int = 587
