@@ -3,6 +3,7 @@ from datetime import datetime
 from app.api.dashboard.model.receipt import (
     ReceiptCreate,
     Receipt,
+    ReceiptFileCreate,
     ReceiptUpdate,
     ReceiptItem,
 )
@@ -91,6 +92,21 @@ class ReceiptDAO:
     def delete_receipts(self, session: Session, ids: list[int]) -> None:
         statement = delete(Receipt).where(Receipt.id.in_(ids))
         session.exec(statement)
+        session.commit()
+
+    def create_receipts_by_upload(
+        self, session: Session, receipts: ReceiptFileCreate, owner_id: int
+    ) -> None:
+        for receipt in receipts.files:
+            db_item = Receipt.model_validate(
+                receipt,
+                update={
+                    "owner_id": owner_id,
+                    "category": "groceries",
+                    "description": receipt.file_name,
+                },
+            )
+            session.add(db_item)
         session.commit()
 
 
