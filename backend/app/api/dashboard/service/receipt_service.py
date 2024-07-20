@@ -5,12 +5,13 @@ from app.api.dashboard.crud.crud_receipt import receipt_dao
 from app.api.dashboard.model.receipt import (
     ReceiptDetail,
     ReceiptCreate,
+    ReceiptFileCreate,
     ReceiptUpdate,
     ReceiptDelete,
 )
 from app.api.deps import SessionDep, CurrentUser
+from app.core.cloudfront import cloudfront_client
 from fastapi import HTTPException
-from sqlmodel import func, select
 from sqlmodel.sql.expression import Select
 
 
@@ -44,6 +45,9 @@ class ReceiptService:
         if not receipt:
             raise HTTPException(status_code=404, detail="Receipt not found")
         receipt_detail = ReceiptDetail.model_validate(receipt)
+        receipt_detail.file_url = cloudfront_client.generate_url(
+            receipt_detail.file_name
+        )
         return receipt_detail
 
     @staticmethod
@@ -74,13 +78,21 @@ class ReceiptService:
         return receipt_detail
 
     @staticmethod
-    def delete_item(
+    def delete_receipts(
         *,
         session: SessionDep,
         current_user: CurrentUser,
         receipts_to_delete: ReceiptDelete,
     ) -> None:
         receipt_dao.delete_receipts(session=session, ids=receipts_to_delete.ids)
+
+    @staticmethod
+    def create_receipts_by_upload(
+        *, session: SessionDep, current_user: CurrentUser, receipts: ReceiptFileCreate
+    ) -> None:
+        receipt_dao.create_receipts_by_upload(
+            session=session, receipts=receipts, owner_id=current_user.id
+        )
 
 
 receipt_service = ReceiptService()

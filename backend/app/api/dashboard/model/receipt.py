@@ -9,7 +9,12 @@ if TYPE_CHECKING:
 
 
 # Shared properties
-class ReceiptBase(AliasMixin):
+class ReceiptFile(AliasMixin):
+    file_name: Optional[str] = Field(max_length=100, default=None, nullable=True)
+    file_url: Optional[str] = Field(max_length=100, default=None, nullable=True)
+
+
+class ReceiptBase(ReceiptFile):
     category: str = Field(max_length=50)
     date: datetime = Field(default_factory=datetime.utcnow)
     description: str = Field(max_length=100)
@@ -30,6 +35,10 @@ class ReceiptUpdate(ReceiptBase):
 
 class ReceiptDelete(SQLModel):
     ids: List[int]
+
+
+class ReceiptFileCreate(AliasMixin):
+    files: List[ReceiptFile]
 
 
 # Database model, database table inferred from class name

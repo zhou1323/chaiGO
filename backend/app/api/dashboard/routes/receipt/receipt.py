@@ -76,10 +76,10 @@ async def update_receipt(
 
 
 @router.delete("/")
-async def delete_item(
+async def delete_receipts(
     session: SessionDep, current_user: CurrentUser, receipts_to_delete: ReceiptDelete
 ) -> Message:
-    receipt_service.delete_item(
+    receipt_service.delete_receipts(
         session=session,
         current_user=current_user,
         receipts_to_delete=receipts_to_delete,
