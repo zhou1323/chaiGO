@@ -1,4 +1,5 @@
 from typing import Any
+import uuid
 
 from app.api.admin.model.token import Message
 from app.api.admin.model.user import (
@@ -31,7 +32,7 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
 @router.get("/{user_id}", response_model=UserPublic)
 def read_user_by_id(
-    user_id: int, session: SessionDep, current_user: CurrentUser
+    user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
 ) -> Any:
     return user_service.read_user_by_id(user_id, session, current_user)
 
@@ -51,7 +52,7 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
 def update_user(
     *,
     session: SessionDep,
-    user_id: int,
+    user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
     return user_service.update_user(session, user_id, user_in)
@@ -59,7 +60,7 @@ def update_user(
 
 @router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
-    session: SessionDep, current_user: CurrentUser, user_id: int
+    session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:
     return user_service.delete_user(session, current_user, user_id)
 

@@ -1,5 +1,6 @@
 from datetime import timedelta
 from typing import Any
+import uuid
 
 from app.api.admin.crud.crud_user import user_dao
 from app.api.admin.model.token import Message
@@ -53,7 +54,7 @@ class UserService:
         return user_with_token
 
     @staticmethod
-    async def logout(*, id: str) -> None:
+    async def logout(*, id: uuid.UUID) -> None:
         prefix = f"{settings.PROJECT_NAME}:{id}:"
         await redis_client.delete_prefix(prefix)
 
@@ -169,7 +170,7 @@ class UserService:
         return UsersPublic(data=users, count=count)
 
     def read_user_by_id(
-        *, user_id: int, session: SessionDep, current_user: CurrentUser
+        *, user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
     ) -> UserPublic:
         user = session.get(User, user_id)
         if user == current_user:
@@ -182,7 +183,7 @@ class UserService:
         return user
 
     def update_user(
-        *, session: SessionDep, user_id: int, user_in: UserUpdate
+        *, session: SessionDep, user_id: uuid.UUID, user_in: UserUpdate
     ) -> UserPublic:
         db_user = session.get(User, user_id)
         if not db_user:
@@ -204,7 +205,7 @@ class UserService:
         return db_user
 
     def delete_user(
-        *, session: SessionDep, current_user: CurrentUser, user_id: int
+        *, session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
     ) -> Message:
         user = session.get(User, user_id)
         if not user:

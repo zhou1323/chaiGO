@@ -3,6 +3,7 @@ from typing import List, TYPE_CHECKING, Optional
 
 from app.common.model import AliasMixin
 from sqlmodel import Field, Relationship, SQLModel
+import uuid
 
 if TYPE_CHECKING:
     from app.api.admin.model.user import User
@@ -29,12 +30,12 @@ class ReceiptCreate(ReceiptBase):
 
 # Properties to receive on receipt update
 class ReceiptUpdate(ReceiptBase):
-    id: int
+    id: uuid.UUID
     items: List["ReceiptItem"] = []
 
 
 class ReceiptDelete(SQLModel):
-    ids: List[int]
+    ids: List[uuid.UUID]
 
 
 class ReceiptFileCreate(AliasMixin):
@@ -45,16 +46,18 @@ class ReceiptFileCreate(AliasMixin):
 class Receipt(ReceiptBase, table=True):
     __tablename__ = "receipt"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="user.id")
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(foreign_key="user.id")
     owner: "User" = Relationship(back_populates="receipts")
-    items: List["ReceiptItem"] = Relationship(back_populates="receipt")
+    items: List["ReceiptItem"] = Relationship(
+        back_populates="receipt", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
 class ReceiptPublic(ReceiptBase):
-    id: int
-    owner_id: int
+    id: uuid.UUID
+    owner_id: uuid.UUID
 
 
 class ReceiptDetail(ReceiptBase):
@@ -63,7 +66,7 @@ class ReceiptDetail(ReceiptBase):
 
 class ReceiptItemBase(AliasMixin):
     item: str = Field(max_length=50, nullable=False)
-    quantity: int = Field(default=0)
+    quantity: float = Field(default=0.0)
     unit: str = Field(max_length=20)
     unit_price: float = Field(default=0.0)
     discount_price: float = Field(default=0.0)
@@ -73,6 +76,6 @@ class ReceiptItemBase(AliasMixin):
 class ReceiptItem(ReceiptItemBase, table=True):
     __tablename__ = "receipt_item"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    receipt_id: int = Field(foreign_key="receipt.id")
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    receipt_id: uuid.UUID = Field(foreign_key="receipt.id", ondelete="CASCADE")
     receipt: "Receipt" = Relationship(back_populates="items")

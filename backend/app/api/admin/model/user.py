@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, List, Optional
+import uuid
 from app.api.admin.model.token import Token
 from app.common.model import AliasMixin
 from pydantic import EmailStr
@@ -52,14 +53,14 @@ class ResetPassword(AliasMixin):
 class User(UserBase, table=True):
     __tablename__ = "user"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     receipts: List["Receipt"] = Relationship(back_populates="owner")
 
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
-    id: int
+    id: uuid.UUID
 
 
 class UsersPublic(SQLModel):
