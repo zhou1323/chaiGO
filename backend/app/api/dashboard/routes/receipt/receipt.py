@@ -1,4 +1,5 @@
 from typing import Any, Annotated
+import uuid
 
 from app.api.admin.model.token import Message
 from app.api.dashboard.model.receipt import (
@@ -45,7 +46,7 @@ def get_receipts_list(
 
 @router.get("/{id}")
 async def get_receipt(
-    session: SessionDep, current_user: CurrentUser, id: int
+    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
 ) -> ResponseModel:
     receipt = receipt_service.get_receipt(session=session, id=id)
     return await response_base.success(data=receipt)
@@ -66,7 +67,7 @@ async def update_receipt(
     *,
     session: SessionDep,
     current_user: CurrentUser,
-    id: int,
+    id: uuid.UUID,
     receipt_in: ReceiptUpdate
 ) -> ResponseModel:
     receipt = receipt_service.update_receipt(

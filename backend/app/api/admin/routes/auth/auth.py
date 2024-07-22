@@ -30,7 +30,7 @@ async def sign_up(session: SessionDep, user_in: UserRegister) -> ResponseModel:
 
 @router.post("/sign-out")
 async def logout(user: CurrentUser) -> ResponseModel:
-    user_service.logout(id=user.id)
+    await user_service.logout(id=user.id)
     return await response_base.success()
 
 

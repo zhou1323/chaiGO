@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import List
+import uuid
 
 from app.api.dashboard.model.receipt import (
     ReceiptCreate,
@@ -13,7 +15,7 @@ from sqlmodel.sql.expression import Select
 
 class ReceiptDAO:
     def create(
-        self, session: Session, receipt_in: ReceiptCreate, owner_id: int
+        self, session: Session, receipt_in: ReceiptCreate, owner_id: uuid.UUID
     ) -> Receipt:
         db_item = Receipt.model_validate(receipt_in, update={"owner_id": owner_id})
         session.add(db_item)
@@ -21,9 +23,18 @@ class ReceiptDAO:
         session.refresh(db_item)
         return db_item
 
+    def create_receipts(
+        self, session: Session, receipts: List[ReceiptCreate], owner_id: uuid.UUID
+    ) -> None:
+        # Can generate id for each receipt automatically
+        for receipt in receipts:
+            db_item = Receipt.model_validate(receipt, update={"owner_id": owner_id})
+            session.add(db_item)
+        session.commit()
+
     def get_receipt_list_statement(
         self,
-        owner_id: int,
+        owner_id: uuid.UUID,
         description: str | None = None,
         category: str | None = None,
         start_date: datetime | None = None,
@@ -57,7 +68,7 @@ class ReceiptDAO:
 
         return statement
 
-    def get_receipt_by_id(self, session: Session, id: int) -> Receipt:
+    def get_receipt_by_id(self, session: Session, id: uuid.UUID) -> Receipt:
         receipt = session.get(Receipt, id)
         return receipt
 
@@ -89,13 +100,21 @@ class ReceiptDAO:
         session.refresh(current_receipt)
         return current_receipt
 
-    def delete_receipts(self, session: Session, ids: list[int]) -> None:
-        statement = delete(Receipt).where(Receipt.id.in_(ids))
-        session.exec(statement)
+    def delete_receipts(self, session: Session, ids: List[uuid.UUID]) -> bool:
+        # Delete receipt with items
+        receipts = session.exec(select(Receipt).where(Receipt.id.in_(ids))).all()
+
+        if not receipts or len(receipts) != len(ids):
+            return False
+
+        for receipt in receipts:
+            session.delete(receipt)
+
         session.commit()
+        return True
 
     def create_receipts_by_upload(
-        self, session: Session, receipts: ReceiptFileCreate, owner_id: int
+        self, session: Session, receipts: ReceiptFileCreate, owner_id: uuid.UUID
     ) -> None:
         for receipt in receipts.files:
             db_item = Receipt.model_validate(

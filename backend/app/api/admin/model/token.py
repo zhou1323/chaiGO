@@ -14,4 +14,4 @@ class Token(SQLModel):
 
 # Contents of JWT token
 class TokenPayload(SQLModel):
-    sub: int | None = None
+    sub: str | None = None
