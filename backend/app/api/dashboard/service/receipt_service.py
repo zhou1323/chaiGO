@@ -1,24 +1,27 @@
 from datetime import datetime
+import uuid
 
 from app.api.admin.model.token import Message
 from app.api.dashboard.crud.crud_receipt import receipt_dao
 from app.api.dashboard.model.receipt import (
+    Receipt,
     ReceiptDetail,
     ReceiptCreate,
     ReceiptFileCreate,
+    ReceiptItem,
     ReceiptUpdate,
     ReceiptDelete,
 )
 from app.api.deps import SessionDep, CurrentUser
 from app.core.cloudfront import cloudfront_client
+from app.core.openai import openai_client
 from fastapi import HTTPException
 from sqlmodel.sql.expression import Select
 
 
 class ReceiptService:
-    @staticmethod
     def get_receipts_list(
-        *,
+        self,
         session: SessionDep,
         current_user: CurrentUser,
         description: str | None = None,
@@ -39,8 +42,7 @@ class ReceiptService:
         )
         return statement
 
-    @staticmethod
-    def get_receipt(*, session: SessionDep, id: int) -> ReceiptDetail:
+    def get_receipt(self, session: SessionDep, id: uuid.UUID) -> ReceiptDetail:
         receipt = receipt_dao.get_receipt_by_id(session=session, id=id)
         if not receipt:
             raise HTTPException(status_code=404, detail="Receipt not found")
@@ -50,9 +52,8 @@ class ReceiptService:
         )
         return receipt_detail
 
-    @staticmethod
     def create_receipt(
-        *, session: SessionDep, current_user: CurrentUser, receipt_in: ReceiptCreate
+        self, session: SessionDep, current_user: CurrentUser, receipt_in: ReceiptCreate
     ) -> ReceiptDetail:
         receipt = receipt_dao.create(
             session=session, receipt_in=receipt_in, owner_id=current_user.id
@@ -60,9 +61,8 @@ class ReceiptService:
         receipt_detail = ReceiptDetail.model_validate(receipt)
         return receipt_detail
 
-    @staticmethod
     def update_receipt(
-        *,
+        self,
         session: SessionDep,
         id: str,
         current_user: CurrentUser,
@@ -77,21 +77,66 @@ class ReceiptService:
         receipt_detail = ReceiptDetail.model_validate(update_receipt)
         return receipt_detail
 
-    @staticmethod
     def delete_receipts(
-        *,
+        self,
         session: SessionDep,
         current_user: CurrentUser,
         receipts_to_delete: ReceiptDelete,
     ) -> None:
-        receipt_dao.delete_receipts(session=session, ids=receipts_to_delete.ids)
+        result = receipt_dao.delete_receipts(
+            session=session, ids=receipts_to_delete.ids
+        )
+        if not result:
+            raise HTTPException(status_code=404, detail="Receipts not found")
 
-    @staticmethod
     def create_receipts_by_upload(
-        *, session: SessionDep, current_user: CurrentUser, receipts: ReceiptFileCreate
+        self,
+        session: SessionDep,
+        current_user: CurrentUser,
+        receipts: ReceiptFileCreate,
     ) -> None:
-        receipt_dao.create_receipts_by_upload(
-            session=session, receipts=receipts, owner_id=current_user.id
+        new_receipts = []
+
+        for receipt in receipts.files:
+            image_url = cloudfront_client.generate_url(receipt.file_name)
+            response = openai_client.gpt_4o_analyse_image_with_completion(image_url)
+
+            if not response:
+                raise HTTPException(
+                    status_code=400, detail="Error processing image analysis"
+                )
+
+            # One file may contain several receipts
+            for extracted_receipt in response:
+                new_receipt_items = []
+
+                # Extract receipt items, use hardcoded index to extract items
+                for item in extracted_receipt[8]:
+                    receiptItem = ReceiptItem(
+                        item=item[1],
+                        quantity=item[2],
+                        unit=item[3],
+                        unit_price=item[4],
+                        discount_price=item[5],
+                        notes=item[6],
+                    )
+                    new_receipt_items.append(receiptItem)
+
+                # Extract receipt
+                new_receipt = ReceiptCreate(
+                    description=extracted_receipt[1],
+                    date=extracted_receipt[2],
+                    category=extracted_receipt[3],
+                    amount=extracted_receipt[4],
+                    notes=extracted_receipt[5],
+                    file_name=receipt.file_name,
+                    items=new_receipt_items,
+                )
+
+                new_receipts.append(new_receipt)
+
+        receipt_dao.create_receipts(
+            session=session, receipts=new_receipts, owner_id=current_user.id
         )
 
 

@@ -31,6 +31,7 @@ jobs:
       CLOUDFRONT_DISTRIBUTION_DOMAIN: ${{ secrets.CLOUDFRONT_DISTRIBUTION_DOMAIN }}
       CLOUDFRONT_KEY_ID: ${{ secrets.CLOUDFRONT_KEY_ID }}
       CLOUDFRONT_PRIVATE_KEY_STRING: ${{ secrets.CLOUDFRONT_PRIVATE_KEY_STRING }}
+      OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     steps:
       - name: Checkout
