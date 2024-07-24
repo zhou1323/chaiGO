@@ -84,6 +84,8 @@ class Settings(BaseSettings):
     CLOUDFRONT_KEY_ID: str
     CLOUDFRONT_PRIVATE_KEY_STRING: str
 
+    OPENAI_KEY: str
+
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
     SMTP_PORT: int = 587
