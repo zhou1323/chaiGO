@@ -80,6 +80,14 @@ services:
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_PASSWORD=${REDIS_PASSWORD?Variable not set}
       - REDIS_DATABASE=${REDIS_DATABASE}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID?Variable not set}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY?Variable not set}
+      - AWS_REGION_NAME=${AWS_REGION_NAME?Variable not set}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME?Variable not set}
+      - CLOUDFRONT_DISTRIBUTION_DOMAIN=${CLOUDFRONT_DISTRIBUTION_DOMAIN?Variable not set}
+      - CLOUDFRONT_KEY_ID=${CLOUDFRONT_KEY_ID?Variable not set}
+      - CLOUDFRONT_PRIVATE_KEY_STRING=${CLOUDFRONT_PRIVATE_KEY_STRING?Variable not set}
+      - OPENAI_KEY=${OPENAI_KEY?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
 
     build:

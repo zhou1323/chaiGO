@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime, timedelta
 from botocore.signers import CloudFrontSigner
 from app.core.config import settings
@@ -10,7 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 def rsa_signer(message):
     private_key = serialization.load_pem_private_key(
         # load the private key from the environment variable as a string
-        settings.CLOUDFRONT_PRIVATE_KEY_STRING.encode(),
+        base64.b64decode(settings.CLOUDFRONT_PRIVATE_KEY_STRING),
         password=None,
         backend=default_backend(),
     )
