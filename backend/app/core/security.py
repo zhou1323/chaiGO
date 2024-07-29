@@ -27,7 +27,7 @@ async def redis_token_authenticate(id: str, token: str) -> bool:
     token_verify = await redis_client.get(key)
     if not token_verify:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is expired",
         )
     return True
