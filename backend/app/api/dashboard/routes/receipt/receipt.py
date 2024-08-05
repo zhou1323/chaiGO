@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 @router.get("/list")
-def get_receipts_list(
+async def get_receipts_list(
     session: SessionDep,
     current_user: CurrentUser,
     description: str | None = None,
@@ -31,7 +31,7 @@ def get_receipts_list(
     order_by: Annotated[str | None, Query(alias="orderBy")] = None,
     order_type: Annotated[str | None, Query(alias="orderType")] = None,
 ) -> Page[ReceiptPublic]:
-    statement = receipt_service.get_receipts_list(
+    statement = receipt_service.get_receipt_list_statement(
         session=session,
         current_user=current_user,
         description=description,
