@@ -7,6 +7,7 @@ from sqlmodel import Field, SQLModel, Relationship
 
 if TYPE_CHECKING:
     from app.api.dashboard.model.receipt import Receipt
+    from app.api.dashboard.model.budget import Budget
 
 
 # Shared properties
@@ -56,6 +57,7 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     receipts: List["Receipt"] = Relationship(back_populates="owner")
+    budgets: List["Budget"] = Relationship(back_populates="owner")
 
 
 # Properties to return via API, id is always required
