@@ -1,0 +1,117 @@
+from datetime import datetime
+import uuid
+
+from app.api.dashboard.crud.crud_budget import budget_dao
+from app.api.dashboard.model.budget import (
+    Budget,
+    BudgetDetail,
+    BudgetCreate,
+    BudgetUpdate,
+    BudgetDelete,
+)
+from app.api.deps import SessionDep, CurrentUser
+from fastapi import HTTPException
+from sqlmodel.sql.expression import Select
+
+
+class BudgetService:
+    def get_budget_list(
+        self,
+        session: SessionDep,
+        current_user: CurrentUser,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        order_by: str | None = None,
+        order_type: str | None = None,
+    ) -> list[Budget]:
+        budgets = budget_dao.get_budget_list(
+            session=session,
+            owner_id=current_user.id,
+            start_date=start_date,
+            end_date=end_date,
+            order_by=order_by,
+            order_type=order_type,
+        )
+        return budgets
+
+    def get_budget_list_statement(
+        self,
+        session: SessionDep,
+        current_user: CurrentUser,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        order_by: str | None = None,
+        order_type: str | None = None,
+    ) -> Select:
+        statement = budget_dao.get_budget_list_statement(
+            owner_id=current_user.id,
+            start_date=start_date,
+            end_date=end_date,
+            order_by=order_by,
+            order_type=order_type,
+        )
+        return statement
+
+    def get_current_budget(
+        self, session: SessionDep, current_user: CurrentUser
+    ) -> BudgetDetail:
+        current = datetime.now()
+        # Change to YYYY-MM format
+        current_date = f"{current.year}-{current.month:02d}"
+
+        budget = budget_dao.get_budget_by_date(
+            session=session, owner_id=current_user.id, date=current_date
+        )
+
+        if not budget:
+            return None
+
+        budget_detail = BudgetDetail.model_validate(budget)
+        return budget_detail
+
+    def create_budget(
+        self, session: SessionDep, current_user: CurrentUser, budget_in: BudgetCreate
+    ) -> BudgetDetail:
+        existed_budget = budget_dao.get_budget_by_date(
+            session=session, owner_id=current_user.id, date=budget_in.date
+        )
+
+        if existed_budget:
+            raise HTTPException(
+                status_code=400, detail="Budget for this month already exists"
+            )
+
+        budget = budget_dao.create(
+            session=session, budget_in=budget_in, owner_id=current_user.id
+        )
+        budget_detail = BudgetDetail.model_validate(budget)
+        return budget_detail
+
+    def update_budget(
+        self,
+        session: SessionDep,
+        id: uuid.UUID,
+        current_user: CurrentUser,
+        budget_in: BudgetUpdate,
+    ) -> BudgetDetail:
+        budget = budget_dao.get_budget_by_id(session=session, id=id)
+        if not budget:
+            raise HTTPException(status_code=404, detail="Item not found")
+        update_budget = budget_dao.update_budget(
+            session=session, current_budget=budget, budget_in=budget_in
+        )
+        budget_detail = BudgetDetail.model_validate(update_budget)
+        return budget_detail
+
+    def delete_budgets(
+        self,
+        session: SessionDep,
+        current_user: CurrentUser,
+        budgets_to_delete: BudgetDelete,
+    ) -> None:
+        result = budget_dao.delete_budgets(session=session, ids=budgets_to_delete.ids)
+        if not result:
+            raise HTTPException(status_code=404, detail="Budgets not found")
+
+
+budget_service = BudgetService()
