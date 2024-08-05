@@ -32,6 +32,29 @@ class ReceiptDAO:
             session.add(db_item)
         session.commit()
 
+    def get_receipt_list(
+        self,
+        session: Session,
+        owner_id: uuid.UUID,
+        description: str | None = None,
+        category: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        order_by: str | None = None,
+        order_type: str | None = None,
+    ) -> List[Receipt]:
+        statement = self.get_receipt_list_statement(
+            owner_id=owner_id,
+            description=description,
+            category=category,
+            start_date=start_date,
+            end_date=end_date,
+            order_by=order_by,
+            order_type=order_type,
+        )
+        receipts = session.exec(statement).all()
+        return receipts
+
     def get_receipt_list_statement(
         self,
         owner_id: uuid.UUID,
@@ -64,13 +87,19 @@ class ReceiptDAO:
                 order_column.desc() if order_type == "desc" else order_column
             )
         else:
-            statement = statement.order_by(Receipt.date)
+            statement = statement.order_by(Receipt.date.desc())
 
         return statement
 
     def get_receipt_by_id(self, session: Session, id: uuid.UUID) -> Receipt:
         receipt = session.get(Receipt, id)
         return receipt
+
+    def get_receipts_by_ids(
+        self, session: Session, ids: List[uuid.UUID]
+    ) -> List[Receipt]:
+        receipts = session.exec(select(Receipt).where(Receipt.id.in_(ids))).all()
+        return receipts
 
     def update_receipt(
         self, session: Session, current_receipt: Receipt, receipt_in: ReceiptUpdate
@@ -100,18 +129,11 @@ class ReceiptDAO:
         session.refresh(current_receipt)
         return current_receipt
 
-    def delete_receipts(self, session: Session, ids: List[uuid.UUID]) -> bool:
-        # Delete receipt with items
-        receipts = session.exec(select(Receipt).where(Receipt.id.in_(ids))).all()
-
-        if not receipts or len(receipts) != len(ids):
-            return False
-
+    def delete_receipts(self, session: Session, receipts: List[Receipt]) -> None:
         for receipt in receipts:
             session.delete(receipt)
 
         session.commit()
-        return True
 
     def create_receipts_by_upload(
         self, session: Session, receipts: ReceiptFileCreate, owner_id: uuid.UUID
