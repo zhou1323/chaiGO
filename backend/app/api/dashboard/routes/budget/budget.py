@@ -82,3 +82,13 @@ async def delete_budgets(
         budgets_to_delete=budgets_to_delete,
     )
     return await response_base.success()
+
+
+@router.get("/overview")
+async def get_budgets_overview(
+    session: SessionDep, current_user: CurrentUser
+) -> ResponseModel:
+    overview = budget_service.get_budgets_overview(
+        session=session, current_user=current_user
+    )
+    return await response_base.success(data=overview)
