@@ -58,3 +58,9 @@ class BudgetDetail(BudgetBase):
     date: str
     recorded_expense: float
     surplus: float
+
+
+class BudgetOverview(SQLModel):
+    month: str
+    current_year: BudgetDetail
+    last_year: BudgetDetail

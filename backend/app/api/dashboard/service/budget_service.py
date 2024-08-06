@@ -6,6 +6,7 @@ from app.api.dashboard.model.budget import (
     Budget,
     BudgetDetail,
     BudgetCreate,
+    BudgetOverview,
     BudgetUpdate,
     BudgetDelete,
 )
@@ -132,6 +133,36 @@ class BudgetService:
         result = budget_dao.delete_budgets(session=session, ids=budgets_to_delete.ids)
         if not result:
             raise HTTPException(status_code=404, detail="Budgets not found")
+
+    def get_budgets_overview(
+        self, session: SessionDep, current_user: CurrentUser
+    ) -> list[BudgetOverview]:
+        current = datetime.now()
+        start_date = f"{current.year-1}-01"
+        end_date = f"{current.year}-12"
+        budgets = budget_dao.get_budget_list(
+            session=session,
+            owner_id=current_user.id,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        # Group budgets by month
+        budget_dict = {}
+        for budget in budgets:
+            date = datetime.strptime(budget.date, "%Y-%m")
+            overview_data = {"month": date.month}
+            if date.year == current.year:
+                overview_data["current_year"] = budget
+            else:
+                overview_data["last_year"] = budget
+
+            if date.month not in budget_dict:
+                budget_dict[date.month] = overview_data
+            else:
+                budget_dict[date.month].update(overview_data)
+
+        return list(budget_dict.values())
 
 
 budget_service = BudgetService()
