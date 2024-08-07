@@ -131,34 +131,36 @@ class ReceiptService:
                 )
 
             # One file may contain several receipts
-            for extracted_receipt in response:
+            for extracted_receipt in response["receipts"]:
                 new_receipt_items = []
 
                 # Extract receipt items, use hardcoded index to extract items
-                for item in extracted_receipt[8]:
+                for item in extracted_receipt["details"]:
+                    # Create receipt item with information in item
                     receiptItem = ReceiptItem(
-                        item=item[1],
-                        quantity=item[2],
-                        unit=item[3],
-                        unit_price=item[4],
-                        discount_price=item[5],
-                        notes=item[6],
+                        item=item["item"],
+                        quantity=item["quantity"],
+                        unit=item["unit"],
+                        unit_price=item["unitPrice"],
+                        discount_price=item["discountPrice"],
+                        notes=item["notes"],
                     )
                     new_receipt_items.append(receiptItem)
 
                 # Extract receipt
                 new_receipt = ReceiptCreate(
-                    description=extracted_receipt[1],
-                    date=extracted_receipt[2],
-                    category=extracted_receipt[3],
-                    amount=extracted_receipt[4],
-                    notes=extracted_receipt[5],
+                    description=extracted_receipt["description"],
+                    date=extracted_receipt["date"],
+                    category=extracted_receipt["category"],
+                    amount=extracted_receipt["amount"],
+                    notes=extracted_receipt["notes"],
                     file_name=receipt.file_name,
                     items=new_receipt_items,
                 )
 
                 new_receipts.append(new_receipt)
 
+        # TODO: No rceipts to create
         receipt_dao.create_receipts(
             session=session, receipts=new_receipts, owner_id=current_user.id
         )

@@ -3,40 +3,15 @@ from openai import OpenAI
 import json
 
 receipt_prompt = """
-This is a credit card statement or a shopping receipt that contains a lot of transaction information for various items. I would like you to act as a secretary to organize and extract the details for me. I only need the JSON array representation of the receipt data.
-
-The extracted information should be presented in text format that conforms to the following requirements:
-
-[id: (string, unique), description: (string, overall description), date: (string, date), category: (string, category), amount: (number, total price), notes: (string, notes), fileName: (string, name of the uploaded file),
-fileUrl: (string, URL of the uploaded file),
-// items in details
-[id: (string, unique), item: (string, name of the item), quantity: (number), unit: (string), unitPrice: (number, price per unit), discountPrice: (number, price per unit after discount), notes: (string, notes)]]
-
-Note that the text 'description', 'date', etc. in the format is only to help you understand the source of the data, and the final output text does not need to contain these words. An example of extracted data is:
-[
-["1", "Shopping at Walmart", "2021-01-01", "Shopping", 100.0, "Grocery", "receipt1.jpg", "https://example.com/receipt1.jpg",
-[
-["1", "Apple", 2, "kg", 5.0, 4.0, "Fresh fruit"],
-["2", "Banana", 3, "kg", 3.0, 2.5, "Fresh fruit"]
-]
-]
-]
+This is a credit card statement or a shopping receipt that contains a lot of transaction information for various items. I would like you to act as a secretary to organize and extract the details for me.
 
 During the extraction process, the following requirements must be met:
-1. If it is a credit card statement:
-1.1. Each line is considered a receipt, and its Transaction Date is the date for the entire receipt.
-1.2. These receipts won't have detailed items
-1.3. When multiple currencies are present, the settlement currency or amount, which is CNY, should be considered.
-2. If it is a shopping receipt:
-2.1. Each line is a receipt item.
-2.2. If there is a discount, the original price information should be stored as unitPrice, and the discounted information should be stored as discountPrice.
-2.3. The default unit is "piece".
-3. For information that cannot be extracted, default it to "" (empty string).
-4. The value for category can be: groceries/transport/entertainment/health/clothing/education/other
-5. If the text to be extracted is not in English, it should first be translated into English. All output text should be in English.
-6. The extracted data should be in the form of a JSON array.
+1. Dates should be in the format YYYY-MM-DD.
+2. For information that cannot be extracted, default it to "" (empty string).
+3. If the text to be extracted is not in English, it MUST firstly be translated into English. All output text MUST be in English.
+4. If it is a credit card statement: (1)Each line is considered a receipt, and its Transaction Date is the date for the entire receipt. (2)These receipts won't have detailed items. (3)When multiple currencies are present, the settlement currency or amount, which is CNY, should be considered.
+5. If it is a shopping receipt: (1)Each line is a receipt item. (2)If there is a discount, unitPrice stores the original unit price, and discountPrice stores the discounted unit price. Discount price <= unit price. (3)The default unit is "piece". (4) The sum of the quantity of each product multiplied by the discounted unit price MUST be equal to the total price of the receipt.
 
-Note that the request is to directly return the translated English plain text with JSON array format, without needing to write code or elaborate on the implementation process. Just the plain text is enough.
 """
 
 extract_receipt_function = {
@@ -44,19 +19,37 @@ extract_receipt_function = {
     "description": "Extract useful information from a credit card statement or a shopping receipt and organize it. The following requirements must be met: 1. If it is a credit card statement: 1.1. Each line is a receipt, and its Transaction Date is the date for the entire receipt. 1.2. Each line is also a receipt item for that receipt. 1.3. When multiple currencies are present, the settlement currency or amount, which is CNY, should be considered. 2. If it is a receipt: 2.1. Each line is a receipt item. 2.2. If there is a discount, the original price information should be stored as unitPrice, and the discounted information should be stored as discountPrice. 3. For information that cannot be extracted, default it to ''. 4. If the text to be extracted is not in English, it should first be translated into English. All output text should be in English.",
     "parameters": {
         "type": "object",
+        "additionalProperties": False,
+        "required": ["receipts"],
         "properties": {
             "receipts": {
                 "type": "array",
                 "description": "all receipts in the image",
                 "items": {
                     "type": "object",
+                    "additionalProperties": False,
+                    "required": [
+                        "id",
+                        "description",
+                        "date",
+                        "category",
+                        "amount",
+                        "notes",
+                        "details",
+                    ],
                     "properties": {
-                        "id": {"type": "string", "description": "unique identifier"},
+                        "id": {
+                            "type": ["string", "null"],
+                            "description": "unique identifier",
+                        },
                         "description": {
                             "type": "string",
                             "description": "overall description",
                         },
-                        "date": {"type": "string", "description": "date"},
+                        "date": {
+                            "type": "string",
+                            "description": "date with format YYYY-MM-DD",
+                        },
                         "category": {
                             "type": "string",
                             "enum": [
@@ -71,23 +64,33 @@ extract_receipt_function = {
                             "description": "category",
                         },
                         "amount": {"type": "number", "description": "total price"},
-                        "notes": {"type": "string", "description": "notes"},
-                        "fileName": {
-                            "type": "string",
-                            "description": "name of the uploaded file",
-                        },
-                        "fileUrl": {
-                            "type": "string",
-                            "description": "URL of the uploaded file",
-                        },
+                        "notes": {"type": ["string", "null"], "description": "notes"},
+                        # "fileName": {
+                        #     "type": ["string", "null"],
+                        #     "description": "name of the uploaded file",
+                        # },
+                        # "fileUrl": {
+                        #     "type": ["string", "null"],
+                        #     "description": "URL of the uploaded file",
+                        # },
                         "details": {
-                            "type": "array",
+                            "type": ["array", "null"],
                             "description": "items in details",
                             "items": {
                                 "type": "object",
+                                "additionalProperties": False,
+                                "required": [
+                                    "id",
+                                    "item",
+                                    "quantity",
+                                    "unit",
+                                    "unitPrice",
+                                    "discountPrice",
+                                    "notes",
+                                ],
                                 "properties": {
                                     "id": {
-                                        "type": "string",
+                                        "type": ["string", "null"],
                                         "description": "unique identifier",
                                     },
                                     "item": {
@@ -110,7 +113,10 @@ extract_receipt_function = {
                                         "type": "number",
                                         "description": "price per unit after discount",
                                     },
-                                    "notes": {"type": "string", "description": "notes"},
+                                    "notes": {
+                                        "type": ["string", "null"],
+                                        "description": "notes",
+                                    },
                                 },
                             },
                         },
@@ -118,7 +124,6 @@ extract_receipt_function = {
                 },
             }
         },
-        "required": [],
     },
 }
 
@@ -154,6 +159,17 @@ class OpenaiClient:
                     },
                 ],
                 temperature=0.2,
+                # Define the schema manually to adjust to function calling
+                # otherwise, the schema can be generated from the model, e.g.:
+                # response_format=Receipt
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "receipt_response",
+                        "strict": True,
+                        "schema": extract_receipt_function.get("parameters"),
+                    },
+                },
             )
             content = response.choices[0].message.content
             content = (
