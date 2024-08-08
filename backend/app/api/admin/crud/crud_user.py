@@ -1,6 +1,6 @@
 from typing import Any
 
-from app.api.admin.model.user import User, UserCreate, UserUpdate
+from app.api.admin.model.user import User, UserCreate, UserUpdate, UserUpdateMe
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
@@ -42,6 +42,25 @@ class UserDAO:
         if not verify_password(password, db_user.hashed_password):
             return None
         return db_user
+
+    def update_user_me(
+        self, session: Session, current_user: User, user_in: UserUpdateMe
+    ) -> User:
+        user_data = user_in.model_dump(exclude_unset=True)
+        current_user.sqlmodel_update(user_data)
+        session.add(current_user)
+        session.commit()
+        session.refresh(current_user)
+
+        return current_user
+
+    def update_password_me(
+        self, session: Session, current_user: User, new_password: str
+    ) -> User:
+        hashed_password = get_password_hash(new_password)
+        current_user.hashed_password = hashed_password
+        session.add(current_user)
+        session.commit()
 
 
 user_dao = UserDAO()

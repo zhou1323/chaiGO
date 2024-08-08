@@ -53,8 +53,7 @@ class UserService:
         )
         return user_with_token
 
-    @staticmethod
-    async def logout(*, id: uuid.UUID) -> None:
+    async def logout(self, id: uuid.UUID) -> None:
         prefix = f"{settings.PROJECT_NAME}:{id}:"
         await redis_client.delete_prefix(prefix)
 
@@ -93,10 +92,9 @@ class UserService:
                 detail="The user with this email already exists in the system",
             )
         user_create = UserCreate.model_validate(user_in)
-        user = user_dao.create_user(session=session, user_create=user_create)
-        return user
+        user_dao.create_user(session=session, user_create=user_create)
 
-    def recover_password(self, session: SessionDep, email: str) -> Message:
+    def recover_password(self, session: SessionDep, email: str) -> None:
         """
         Password Recovery
         """
@@ -117,7 +115,6 @@ class UserService:
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
-        return Message(message="Password recovery email sent")
 
     def reset_password(
         self, session: SessionDep, token: str, new_password: str
@@ -223,7 +220,7 @@ class UserService:
 
     # service about current user
     def update_user_me(
-        *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
+        self, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
     ) -> UserPublic:
         if user_in.email:
             existing_user = user_dao.get_user_by_email(
@@ -233,15 +230,14 @@ class UserService:
                 raise HTTPException(
                     status_code=409, detail="User with this email already exists"
                 )
-        user_data = user_in.model_dump(exclude_unset=True)
-        current_user.sqlmodel_update(user_data)
-        session.add(current_user)
-        session.commit()
-        session.refresh(current_user)
-        return current_user
+        updated_user = user_dao.update_user_me(
+            session=session, current_user=current_user, user_in=user_in
+        )
+        user_info = UserPublic.model_validate(updated_user)
+        return user_info
 
-    def update_password_me(
-        *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
+    async def update_password_me(
+        self, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
     ) -> Message:
         if not verify_password(body.current_password, current_user.hashed_password):
             raise HTTPException(status_code=400, detail="Incorrect password")
@@ -250,11 +246,10 @@ class UserService:
                 status_code=400,
                 detail="New password cannot be the same as the current one",
             )
-        hashed_password = get_password_hash(body.new_password)
-        current_user.hashed_password = hashed_password
-        session.add(current_user)
-        session.commit()
-        return Message(message="Password updated successfully")
+        user_dao.update_password_me(
+            session=session, current_user=current_user, new_password=body.new_password
+        )
+        await self.logout(id=current_user.id)
 
     def delete_user_me(*, session: SessionDep, current_user: CurrentUser) -> Message:
         if current_user.is_superuser:
