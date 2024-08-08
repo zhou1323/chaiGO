@@ -16,6 +16,7 @@ from app.api.deps import (
     SessionDep,
     get_current_active_superuser,
 )
+from app.common.response.response_schema import ResponseModel, response_base
 from fastapi import APIRouter, Depends
 
 router = APIRouter()
@@ -66,20 +67,20 @@ def delete_user(
 
 
 # Current user
-
-
-@router.patch("/me", response_model=UserPublic)
-def update_user_me(
+@router.put("/me")
+async def update_user_me(
     *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
-) -> Any:
-    return user_service.update_user_me(session, user_in, current_user)
+) -> ResponseModel:
+    updated_user = user_service.update_user_me(session, user_in, current_user)
+    return await response_base.success(data=updated_user)
 
 
-@router.patch("/me/password", response_model=Message)
-def update_password_me(
+@router.put("/me/password")
+async def update_password_me(
     *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
-) -> Any:
-    return user_service.update_password_me(session, body, current_user)
+) -> ResponseModel:
+    await user_service.update_password_me(session, body, current_user)
+    return await response_base.success()
 
 
 @router.get("/me", response_model=UserPublic)

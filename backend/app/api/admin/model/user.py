@@ -40,7 +40,7 @@ class UserUpdateMe(SQLModel):
     email: Optional[EmailStr] = Field(default=None, max_length=255)
 
 
-class UpdatePassword(SQLModel):
+class UpdatePassword(AliasMixin):
     current_password: str = Field(min_length=8, max_length=40)
     new_password: str = Field(min_length=8, max_length=40)
 
