@@ -81,7 +81,9 @@ class BudgetService:
 
         if len(budgets) > 0:
             budgets[0].recorded_expense = amount
+            budgets[0].surplus = budgets[0].budget - amount - budgets[0].other_expense
             session.add(budgets[0])
+            session.commit()
         else:
             budget_in = BudgetCreate(
                 date=date,
