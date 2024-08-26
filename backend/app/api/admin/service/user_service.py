@@ -1,4 +1,6 @@
 from datetime import timedelta
+import random
+import string
 from typing import Any
 import uuid
 
@@ -24,6 +26,7 @@ from app.core.security import get_password_hash, verify_password
 from app.utils.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
+    generate_verification_code_email,
     send_email,
     verify_password_reset_token,
     generate_new_account_email,
@@ -58,7 +61,7 @@ class UserService:
         await redis_client.delete_prefix(prefix)
 
     # Return confirmation email with account info
-    def create_user(*, session: SessionDep, user_in: UserCreate) -> UserPublic:
+    async def create_user(*, session: SessionDep, user_in: UserCreate) -> UserPublic:
         user = user_dao.get_user_by_email(session=session, email=user_in.email)
         if user:
             raise HTTPException(
@@ -72,11 +75,60 @@ class UserService:
                 username=user_in.username,
                 password=user_in.password,
             )
-            send_email(
+            await send_email(
                 email_to=user_in.email,
                 subject=email_data.subject,
                 html_content=email_data.html_content,
             )
+        return user
+
+    async def generate_verification_code(self, email: str) -> str:
+        verification_code = "".join(
+            random.choices(string.ascii_uppercase + string.digits, k=6)
+        )
+        await redis_client.set(
+            f"{settings.PROJECT_NAME}:{email}:verification_code",
+            verification_code,
+            ex=60,
+        )
+        return verification_code
+
+    async def verify_code(self, email: str, code: str) -> bool:
+        verification_code = await redis_client.get(
+            f"{settings.PROJECT_NAME}:{email}:verification_code"
+        )
+        if verification_code is None:
+            return False
+        return verification_code.lower() == code.lower()
+
+    async def send_verification_email(
+        self, session: SessionDep, email: str, verification_code: str
+    ):
+        # Check if email already exists
+        user = user_dao.get_user_by_email(session=session, email=email)
+        if user:
+            raise HTTPException(
+                status_code=400,
+                detail="The user with this email already exists in the system.",
+            )
+
+        email_data = generate_verification_code_email(
+            email_to=email,
+            verification_code=verification_code,
+        )
+        await send_email(
+            email_to=email,
+            subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+
+    async def register_user_with_verification(
+        self, session: SessionDep, user_in: UserRegister
+    ):
+        if not await self.verify_code(user_in.email, user_in.verification_code):
+            raise HTTPException(status_code=400, detail="Invalid verification code")
+
+        user = self.register_user(session=session, user_in=user_in)
         return user
 
     def register_user(self, session: SessionDep, user_in: UserRegister) -> None:
@@ -94,7 +146,7 @@ class UserService:
         user_create = UserCreate.model_validate(user_in)
         user_dao.create_user(session=session, user_create=user_create)
 
-    def recover_password(self, session: SessionDep, email: str) -> None:
+    async def recover_password(self, session: SessionDep, email: str) -> None:
         """
         Password Recovery
         """
@@ -110,7 +162,7 @@ class UserService:
         email_data = generate_reset_password_email(
             email_to=user.email, email=email, token=password_reset_token
         )
-        send_email(
+        await send_email(
             email_to=user.email,
             subject=email_data.subject,
             html_content=email_data.html_content,

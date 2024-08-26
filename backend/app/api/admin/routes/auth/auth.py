@@ -22,9 +22,16 @@ async def login(
     return await response_base.success(data=data)
 
 
+@router.get("/verification-code")
+async def send_verification_code(email: str, session: SessionDep) -> ResponseModel:
+    verification_code = await user_service.generate_verification_code(email)
+    await user_service.send_verification_email(session, email, verification_code)
+    return await response_base.success()
+
+
 @router.post("/sign-up")
 async def sign_up(session: SessionDep, user_in: UserRegister) -> ResponseModel:
-    user_service.register_user(session, user_in)
+    await user_service.register_user_with_verification(session, user_in)
     return await response_base.success()
 
 
@@ -44,7 +51,7 @@ def test_token(current_user: CurrentUser) -> Any:
 
 @router.get("/recover-password")
 async def recover_password(email: str, session: SessionDep) -> ResponseModel:
-    user_service.recover_password(session, email)
+    await user_service.recover_password(session, email)
     return await response_base.success()
 
 

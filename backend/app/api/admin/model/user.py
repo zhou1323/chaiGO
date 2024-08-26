@@ -29,10 +29,11 @@ class UserUpdate(UserBase):
     password: Optional[str] = Field(default=None, min_length=8, max_length=40)
 
 
-class UserRegister(SQLModel):
+class UserRegister(AliasMixin):
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=40)
     username: Optional[str] = Field(default=None, max_length=255)
+    verification_code: str = Field(min_length=6, max_length=6)
 
 
 class UserUpdateMe(SQLModel):
