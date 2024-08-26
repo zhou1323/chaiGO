@@ -41,8 +41,8 @@ def read_user_by_id(
 @router.post(
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
 )
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
-    return user_service.create_user(session, user_in)
+async def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+    return await user_service.create_user(session, user_in)
 
 
 @router.patch(

@@ -25,7 +25,7 @@ def render_email_template(*, template_name: str, context: dict[str, Any]) -> str
     return html_content
 
 
-def send_email(
+async def send_email(
     *,
     email_to: str,
     subject: str = "",
@@ -72,6 +72,21 @@ def generate_reset_password_email(email_to: str, email: str, token: str) -> Emai
             "email": email_to,
             "valid_hours": settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS,
             "link": link,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)
+
+
+def generate_verification_code_email(
+    email_to: str, verification_code: str
+) -> EmailData:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Verification Code"
+    html_content = render_email_template(
+        template_name="verification_code.html",
+        context={
+            "project_name": settings.PROJECT_NAME,
+            "verification_code": verification_code,
         },
     )
     return EmailData(html_content=html_content, subject=subject)
