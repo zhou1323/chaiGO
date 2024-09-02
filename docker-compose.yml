@@ -149,6 +149,10 @@ services:
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect,${STACK_NAME?Variable not set}-www-redirect
     environment:
       - NEXT_PUBLIC_BASE_URL=https://${DOMAIN?Variable not set}
+      - NEXT_PUBLIC_SENTRY_DSN=${FRONTEND_SENTRY_DSN}
+      - SENTRY_AUTH_TOKEN=${FRONTEND_SENTRY_AUTH_TOKEN} 
+      - SENTRY_PROJECT=${FRONTEND_SENTRY_PROJECT}
+      - SENTRY_ORG=${FRONTEND_SENTRY_ORG}
 volumes:
   app-db-data:
   redis-data:
