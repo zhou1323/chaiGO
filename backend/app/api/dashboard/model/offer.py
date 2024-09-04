@@ -41,3 +41,20 @@ class OfferPublic(OfferBase):
     store_id: uuid.UUID
     store_name: str | None = None
     img_url: str | None = None
+
+
+class OfferInShoppingList(OfferPublic):
+    price_string: str
+    offer_info: str
+
+
+class StoreInShoppingList(AliasMixin):
+    store_name: str
+    total: str
+    offers: list[OfferInShoppingList]
+
+
+class ShoppingListContent(AliasMixin):
+    shopping_list: list[StoreInShoppingList]
+    total: str
+    weekly_budget: str

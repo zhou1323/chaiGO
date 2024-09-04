@@ -1,9 +1,11 @@
 from app.api.dashboard.model.offer import (
     Offer,
     OfferPublic,
+    ShoppingListContent,
 )
 from app.api.dashboard.service.offer_service import offer_service
-from app.api.deps import SessionDep
+from app.api.deps import CurrentUser, SessionDep
+from app.common.response.response_schema import ResponseModel, response_base
 from fastapi import APIRouter, Depends
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlmodel import paginate
@@ -36,3 +38,13 @@ async def get_offers_list(
 
         offer = offer_service.update_offer_img_url(offer)
     return paginated_offers
+
+
+@router.post("/send-shopping-list-email")
+async def send_shopping_list_email(
+    session: SessionDep, current_user: CurrentUser, shopping_list: ShoppingListContent
+) -> ResponseModel:
+    await offer_service.send_shopping_list_email(
+        session=session, current_user=current_user, shopping_list=shopping_list
+    )
+    return await response_base.success()
