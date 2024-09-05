@@ -1,3 +1,4 @@
+from typing import Annotated
 from app.api.dashboard.model.offer import (
     Offer,
     OfferPublic,
@@ -6,7 +7,7 @@ from app.api.dashboard.model.offer import (
 from app.api.dashboard.service.offer_service import offer_service
 from app.api.deps import CurrentUser, SessionDep
 from app.common.response.response_schema import ResponseModel, response_base
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlmodel import paginate
 
@@ -48,3 +49,15 @@ async def send_shopping_list_email(
         session=session, current_user=current_user, shopping_list=shopping_list
     )
     return await response_base.success()
+
+
+@router.get("/recommend-shopping-list")
+async def recommend_shopping_list(
+    session: SessionDep,
+    current_user: CurrentUser,
+    weekly_budget: Annotated[str | None, Query(alias="weeklyBudget")] = None,
+) -> ResponseModel:
+    recommended_shopping_list = offer_service.recommend_shopping_list(
+        session=session, current_user=current_user, weekly_budget=weekly_budget
+    )
+    return await response_base.success(data={"items": recommended_shopping_list})
