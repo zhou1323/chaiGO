@@ -55,6 +55,23 @@ services:
     ports:
       - "8080:8080"
 
+  flower:
+    restart: "no"
+    ports:
+      - "5555:5555"
+
+  celeryworker:
+    restart: "no"
+    volumes:
+      - ./backend/:/app
+    environment:
+      - RUN=celery worker -A app.api.task.celery_task.tasks -l info -Q main-queue -c 1
+    build:
+      context: ./backend
+      dockerfile: celeryworker.dockerfile
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-true}
+
   backend:
     restart: "no"
     ports:
