@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import uuid
 
 from app.api.admin.model.token import Message
+from app.api.admin.model.user import User
 from app.api.dashboard.crud.crud_receipt import receipt_dao
 from app.api.dashboard.model.receipt import (
     Receipt,
@@ -9,14 +10,18 @@ from app.api.dashboard.model.receipt import (
     ReceiptCreate,
     ReceiptFileCreate,
     ReceiptItem,
+    ReceiptPublic,
     ReceiptUpdate,
     ReceiptDelete,
 )
 from app.api.dashboard.service.budget_service import budget_service
 from app.api.deps import SessionDep, CurrentUser
+from app.api.task.celery_task.receipt.tasks import process_receipts_upload_task
+from app.api.task.service.task_service import task_service
 from app.core.cloudfront import cloudfront_client
 from app.core.openai import openai_client
 from fastapi import HTTPException
+from sqlmodel import Session
 from sqlmodel.sql.expression import Select
 
 
@@ -117,12 +122,43 @@ class ReceiptService:
         self,
         session: SessionDep,
         current_user: CurrentUser,
-        receipts: ReceiptFileCreate,
+        receipt_files: ReceiptFileCreate,
     ) -> None:
-        new_receipts = []
+        # Create placeholder receipts
+        placeholder_receipts = []
+        for receipt_file in receipt_files.files:
+            placeholder_receipt = ReceiptCreate(
+                category="groceries",
+                description=receipt_file.file_name,
+                file_name=receipt_file.file_name,
+            )
+            placeholder_receipts.append(placeholder_receipt)
 
-        for receipt in receipts.files:
-            image_url = cloudfront_client.generate_url(receipt.file_name)
+        receipts_db = receipt_dao.create_receipts(
+            session=session, receipts=placeholder_receipts, owner_id=current_user.id
+        )
+
+        # Start Celery task
+        task = process_receipts_upload_task.delay(
+            str(current_user.id),
+            [receipt.model_dump_json() for receipt in receipts_db],
+        )
+
+        receipt_dao.update_receipt_tasks_status(
+            session=session, receipts=receipts_db, task_id=task.id
+        )
+
+    def process_receipts_upload(
+        self,
+        session: Session,
+        current_user: User,
+        receipts: list[Receipt],
+    ):
+        to_update_receipts = []
+        to_create_receipts = []
+
+        for receipt_file in receipts:
+            image_url = cloudfront_client.generate_url(receipt_file.file_name)
             response = openai_client.gpt_4o_analyse_image_with_completion(image_url)
 
             if not response:
@@ -131,8 +167,9 @@ class ReceiptService:
                 )
 
             # One file may contain several receipts
+            receipt_num = 1
             for extracted_receipt in response["receipts"]:
-                new_receipt_items = []
+                receipt_items = []
 
                 # Extract receipt items, use hardcoded index to extract items
                 for item in extracted_receipt["details"]:
@@ -145,31 +182,71 @@ class ReceiptService:
                         discount_price=item["discountPrice"],
                         notes=item["notes"],
                     )
-                    new_receipt_items.append(receiptItem)
+                    receipt_items.append(receiptItem)
 
                 # Extract receipt
-                new_receipt = ReceiptCreate(
-                    description=extracted_receipt["description"],
-                    date=extracted_receipt["date"],
-                    category=extracted_receipt["category"],
-                    amount=extracted_receipt["amount"],
-                    notes=extracted_receipt["notes"],
-                    file_name=receipt.file_name,
-                    items=new_receipt_items,
-                )
+                if receipt_num == 1:
+                    new_receipt = ReceiptUpdate(
+                        id=receipt_file.id,
+                        description=extracted_receipt["description"],
+                        date=extracted_receipt["date"],
+                        category=extracted_receipt["category"],
+                        amount=extracted_receipt["amount"],
+                        notes=extracted_receipt["notes"],
+                        file_name=receipt_file.file_name,
+                        items=receipt_items,
+                    )
+                    to_update_receipts.append(new_receipt)
+                else:
+                    new_receipt = ReceiptCreate(
+                        description=extracted_receipt["description"],
+                        date=extracted_receipt["date"],
+                        category=extracted_receipt["category"],
+                        amount=extracted_receipt["amount"],
+                        notes=extracted_receipt["notes"],
+                        file_name=receipt_file.file_name,
+                        items=receipt_items,
+                    )
+                    to_create_receipts.append(new_receipt)
 
-                new_receipts.append(new_receipt)
+                receipt_num += 1
 
-        # TODO: No rceipts to create
+        # Create receipts
         receipt_dao.create_receipts(
-            session=session, receipts=new_receipts, owner_id=current_user.id
+            session=session, receipts=to_create_receipts, owner_id=current_user.id
         )
+
+        # Update receipts
+        for receipt_to_update in to_update_receipts:
+            current_receipt = receipt_dao.get_receipt_by_id(
+                session=session, id=receipt_to_update.id
+            )
+            if not current_receipt:
+                raise HTTPException(status_code=404, detail="Item not found")
+
+            receipt_dao.update_receipt(
+                session=session,
+                current_receipt=current_receipt,
+                receipt_in=receipt_to_update,
+            )
 
         self.update_budget(
             session=session,
             current_user=current_user,
-            dates=[receipt.date for receipt in new_receipts],
+            dates=(
+                receipt.date for receipt in (to_create_receipts + to_update_receipts)
+            ),
         )
+
+    def update_receipt_task_status(self, receipt: ReceiptPublic):
+        if receipt.task_id:
+            task_result = task_service.get_result(receipt.task_id)
+            receipt.task_status = task_result.status
+            if task_result.successful():
+                receipt.task_message = task_result.info
+            else:
+                receipt.task_message = task_result.traceback
+        return receipt
 
     # Update budget when update receipts
     def update_budget(

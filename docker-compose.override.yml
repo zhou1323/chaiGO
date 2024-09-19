@@ -65,7 +65,7 @@ services:
     volumes:
       - ./backend/:/app
     environment:
-      - RUN=celery worker -A app.api.task.celery_task.tasks -l info -Q main-queue -c 1
+      - RUN=celery worker -A app.core.celery -l info -Q main-queue -c 1
     build:
       context: ./backend
       dockerfile: celeryworker.dockerfile

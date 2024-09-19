@@ -9,6 +9,7 @@ from app.api.dashboard.model.receipt import (
     ReceiptUpdate,
     ReceiptItem,
 )
+from app.api.task.model.task import CeleryTaskMeta
 from sqlmodel import Session, select, delete
 from sqlmodel.sql.expression import Select
 
@@ -25,12 +26,17 @@ class ReceiptDAO:
 
     def create_receipts(
         self, session: Session, receipts: List[ReceiptCreate], owner_id: uuid.UUID
-    ) -> None:
+    ) -> List[Receipt]:
         # Can generate id for each receipt automatically
+        receipts_db = []
         for receipt in receipts:
             db_item = Receipt.model_validate(receipt, update={"owner_id": owner_id})
             session.add(db_item)
+            receipts_db.append(db_item)
         session.commit()
+        for receipt in receipts_db:
+            session.refresh(receipt)
+        return receipts_db
 
     def get_receipt_list(
         self,
@@ -148,6 +154,18 @@ class ReceiptDAO:
                 },
             )
             session.add(db_item)
+        session.commit()
+
+    def update_receipt_tasks_status(
+        self,
+        session: Session,
+        receipts: List[Receipt],
+        task_id: str | None = None,
+    ) -> None:
+        for receipt in receipts:
+            if task_id:
+                receipt.task_id = task_id
+            session.add(receipt)
         session.commit()
 
 
