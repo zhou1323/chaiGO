@@ -40,6 +40,10 @@ app = FastAPI(
     lifespan=register_init,
 )
 
+if settings.ENVIRONMENT != "local":
+    app.docs_url = None
+    app.redoc_url = None
+
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(

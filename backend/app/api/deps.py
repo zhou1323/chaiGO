@@ -15,7 +15,9 @@ from pydantic import ValidationError
 from sqlmodel import Session
 
 # Used by swagger, to get the access token
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/sign-in")
+reusable_oauth2 = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/sign-in-for-swagger"
+)
 
 
 def get_db() -> Generator[Session, None, None]:
