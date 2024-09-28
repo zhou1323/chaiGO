@@ -25,7 +25,7 @@ Backend service for ChaiGO, a personal finance management website. The service i
 
 ## Project wikis
 
-[Here](https://chai-go.notion.site/ChaiGO-Frontend-944924824444444444444444444) is the link to the project wiki.
+[Here](https://midnight-scarf-544.notion.site/ChaiGo-Development-Wiki-5b29040746e74457a3afe218f0c634e5?pvs=4) is the link to the project wiki.
 
 ## Project Structure
 
