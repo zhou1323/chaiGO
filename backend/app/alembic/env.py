@@ -26,6 +26,7 @@ from sqlmodel import SQLModel
 # Must import used tables
 import app.api.admin.model
 import app.api.dashboard.model
+import app.api.task.model
 
 target_metadata = SQLModel.metadata
 

@@ -12,6 +12,16 @@ router = APIRouter()
 
 
 # Use the OAuth2 mechanism provided by fastapi
+@router.post("/sign-in-for-swagger")
+async def login_for_swagger(
+    session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+) -> Any:
+    data = await user_service.login(
+        session=session, email=form_data.username, password=form_data.password
+    )
+    return {"access_token": data.access_token, "token_type": "bearer"}
+
+
 @router.post("/sign-in")
 async def login(
     session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]

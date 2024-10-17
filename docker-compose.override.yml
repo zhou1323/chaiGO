@@ -55,6 +55,23 @@ services:
     ports:
       - "8080:8080"
 
+  flower:
+    restart: "no"
+    ports:
+      - "5555:5555"
+
+  celeryworker:
+    restart: "no"
+    volumes:
+      - ./backend/:/app
+    environment:
+      - RUN=celery worker -A app.core.celery -l info -Q main-queue -c 1
+    build:
+      context: ./backend
+      dockerfile: celeryworker.dockerfile
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-true}
+
   backend:
     restart: "no"
     ports:
@@ -70,6 +87,8 @@ services:
     environment:
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
     labels:

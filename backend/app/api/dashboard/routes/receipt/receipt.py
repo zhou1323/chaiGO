@@ -41,7 +41,22 @@ async def get_receipts_list(
         order_by=order_by,
         order_type=order_type,
     )
-    return paginate(session, statement)
+    paginated_receipts = paginate(session, statement)
+
+    receipt_task_dict = {}
+
+    for receipt in paginated_receipts.items:
+        if receipt.task_id not in receipt_task_dict:
+            receipt = receipt_service.update_receipt_task_status(receipt)
+            receipt_task_dict[receipt.task_id] = {
+                "status": receipt.task_status,
+                "message": receipt.task_message,
+            }
+        else:
+            receipt.task_status = receipt_task_dict[receipt.task_id]["status"]
+            receipt.task_message = receipt_task_dict[receipt.task_id]["message"]
+
+    return paginated_receipts
 
 
 @router.get("/{id}")

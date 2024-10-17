@@ -16,7 +16,7 @@ class ReceiptFile(AliasMixin):
 
 
 class ReceiptBase(ReceiptFile):
-    category: str = Field(max_length=50)
+    category: str = Field(max_length=50, nullable=True)
     date: datetime = Field(default_factory=datetime.utcnow)
     description: str = Field(max_length=100)
     notes: Optional[str] = Field(default=None, max_length=100, nullable=True)
@@ -52,12 +52,17 @@ class Receipt(ReceiptBase, table=True):
     items: List["ReceiptItem"] = Relationship(
         back_populates="receipt", cascade_delete=True
     )
+    task_id: Optional[str] = Field(default=None, nullable=True)
 
 
 # Properties to return via API, id is always required
 class ReceiptPublic(ReceiptBase):
     id: uuid.UUID
     owner_id: uuid.UUID
+    task_id: Optional[str] = None
+    # Task status is one of the following: PENDING, STARTED, RETRY, FAILURE, SUCCESS
+    task_status: Optional[str] = None
+    task_message: Optional[str] = None
 
 
 class ReceiptDetail(ReceiptBase):

@@ -1,9 +1,11 @@
+import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from app.api.dashboard.model.offer import ShoppingListContent
 import emails  # type: ignore
 import jwt
 from app.core.config import settings
@@ -129,3 +131,20 @@ def verify_password_reset_token(token: str) -> str | None:
         return str(decoded_token["sub"])
     except InvalidTokenError:
         return None
+
+
+def generate_shopping_list_email(
+    email_to: str, shopping_list_content: ShoppingListContent
+) -> EmailData:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Shopping List"
+    # Transform the shopping list content into a json object
+    shopping_list_content_json = shopping_list_content.model_dump()
+    html_content = render_email_template(
+        template_name="shopping_list.html",
+        context={
+            "project_name": settings.PROJECT_NAME,
+            "shopping_list_content": shopping_list_content_json,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)

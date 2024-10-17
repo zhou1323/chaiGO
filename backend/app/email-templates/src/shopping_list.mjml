@@ -1,0 +1,102 @@
+<mjml>
+  <mj-body background-color="#fafbfc">
+    <mj-section background-color="#fff" padding="40px 20px">
+      <mj-column vertical-align="middle" width="100%">
+        <mj-text align="center" padding="35px" font-size="20px" color="#333">
+          {{ project_name }} - Shopping List Summary
+        </mj-text>
+        <mj-text
+          align="center"
+          font-size="16px"
+          padding-left="25px"
+          padding-right="25px"
+          font-family="Arial, Helvetica, sans-serif"
+          color="#555"
+        >
+          Here is your current shopping list:
+        </mj-text>
+
+        {% if shopping_list_content and shopping_list_content.shopping_list %}
+        {% for store in shopping_list_content.shopping_list %}
+        <!-- Store Name Section -->
+        <mj-text font-size="18px" font-weight="bold" color="#000">
+          {{ store.store_name }}
+        </mj-text>
+
+        <!-- Item Table Section -->
+        <mj-table color="#555">
+          <tr>
+            <th align="left">Item</th>
+            <th align="right">Price</th>
+          </tr>
+
+          {% for offer in store.offers %}
+          <tr>
+            <!-- Product Image -->
+            <td
+              align="left"
+              style="display: flex; align-items: center; padding: 5px 0px"
+            >
+              <img
+                src="{{ offer.img_url }}"
+                alt="{{ offer.item }}"
+                width="60"
+                height="60"
+                style="margin-right: 10px"
+              />
+              <div style="display: inline-block">
+                <strong>{{ offer.item }}</strong><br />
+                {{ offer.offer_info }}
+              </div>
+            </td>
+
+            <!-- Price Section -->
+            <td align="right" style="color: red; font-weight: bold">
+              {{ offer.price_string }}
+            </td>
+          </tr>
+          {% endfor %}
+
+          <tr>
+            <td align="left"><strong>Total</strong></td>
+            <td align="right"><strong>{{ store.total }}</strong></td>
+          </tr>
+        </mj-table>
+        {% endfor %} {% else %}
+        <mj-text align="center" font-size="16px" color="#555">
+          No shopping list data available.
+        </mj-text>
+        {% endif %}
+
+        <!-- Budget Section -->
+        <mj-divider border-color="#ddd" />
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-family="Arial, Helvetica, sans-serif"
+          color="#555"
+        >
+          Weekly Budget: {{ shopping_list_content.weekly_budget }}
+        </mj-text>
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-family="Arial, Helvetica, sans-serif"
+          color="#555"
+        >
+          Total Cost: {{ shopping_list_content.total }}
+        </mj-text>
+
+        <mj-text
+          align="center"
+          font-size="16px"
+          padding="25px"
+          font-family="Arial, Helvetica, sans-serif"
+          color="#555"
+        >
+          Thank you for using our shopping list service!
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

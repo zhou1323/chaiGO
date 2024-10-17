@@ -12,6 +12,6 @@ async def create_receipts_by_upload(
     session: SessionDep, current_user: CurrentUser, receipts: ReceiptFileCreate
 ):
     receipt_service.create_receipts_by_upload(
-        session=session, current_user=current_user, receipts=receipts
+        session=session, current_user=current_user, receipt_files=receipts
     )
     return await response_base.success()
