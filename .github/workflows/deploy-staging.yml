@@ -34,6 +34,10 @@ jobs:
       OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       FLOWER_BASIC_AUTH: ${{ secrets.FLOWER_BASIC_AUTH }}
+      FRONTEND_SENTRY_DSN: ${{ secrets.FRONTEND_SENTRY_DSN }}
+      FRONTEND_SENTRY_AUTH_TOKEN: ${{ secrets.FRONTEND_SENTRY_AUTH_TOKEN }}
+      FRONTEND_SENTRY_PROJECT: ${{ secrets.FRONTEND_SENTRY_PROJECT }}
+      FRONTEND_SENTRY_ORG: ${{ secrets.FRONTEND_SENTRY_ORG }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
