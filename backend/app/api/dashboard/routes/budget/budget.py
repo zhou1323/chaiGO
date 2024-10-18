@@ -48,7 +48,7 @@ async def get_budget(session: SessionDep, current_user: CurrentUser) -> Response
     return await response_base.success(data=budget)
 
 
-@router.post("/")
+@router.post("/budget")
 async def create_budget(
     *, session: SessionDep, current_user: CurrentUser, budget_in: BudgetCreate
 ) -> ResponseModel:
@@ -58,7 +58,7 @@ async def create_budget(
     return await response_base.success(data=budget)
 
 
-@router.put("/{id}")
+@router.put("/budget/{id}")
 async def update_budget(
     *,
     session: SessionDep,
@@ -72,7 +72,7 @@ async def update_budget(
     return await response_base.success(data=budget)
 
 
-@router.delete("/")
+@router.delete("/budget")
 async def delete_budgets(
     session: SessionDep, current_user: CurrentUser, budgets_to_delete: BudgetDelete
 ) -> Message:

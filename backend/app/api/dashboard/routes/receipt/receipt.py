@@ -59,7 +59,7 @@ async def get_receipts_list(
     return paginated_receipts
 
 
-@router.get("/{id}")
+@router.get("/receipt/{id}")
 async def get_receipt(
     session: SessionDep, current_user: CurrentUser, id: uuid.UUID
 ) -> ResponseModel:
@@ -67,7 +67,7 @@ async def get_receipt(
     return await response_base.success(data=receipt)
 
 
-@router.post("/")
+@router.post("/receipt")
 async def create_receipt(
     *, session: SessionDep, current_user: CurrentUser, receipt_in: ReceiptCreate
 ) -> ResponseModel:
@@ -77,7 +77,7 @@ async def create_receipt(
     return await response_base.success(data=receipt)
 
 
-@router.put("/{id}")
+@router.put("/receipt/{id}")
 async def update_receipt(
     *,
     session: SessionDep,
@@ -91,7 +91,7 @@ async def update_receipt(
     return await response_base.success(data=receipt)
 
 
-@router.delete("/")
+@router.delete("/receipt")
 async def delete_receipts(
     session: SessionDep, current_user: CurrentUser, receipts_to_delete: ReceiptDelete
 ) -> Message:
