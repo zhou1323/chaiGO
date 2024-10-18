@@ -33,16 +33,22 @@ async def register_init(app: FastAPI):
     await redis_client.close()
 
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    generate_unique_id_function=custom_generate_unique_id,
-    lifespan=register_init,
-)
-
 if settings.ENVIRONMENT != "local":
-    app.docs_url = None
-    app.redoc_url = None
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        openapi_url=f"{settings.API_V1_STR}/openapi.json",
+        generate_unique_id_function=custom_generate_unique_id,
+        lifespan=register_init,
+        docs_url=None,
+        redoc_url=None,
+    )
+else:
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        openapi_url=f"{settings.API_V1_STR}/openapi.json",
+        generate_unique_id_function=custom_generate_unique_id,
+        lifespan=register_init,
+    )
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
