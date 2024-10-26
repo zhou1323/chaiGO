@@ -46,7 +46,7 @@ async def get_receipts_list(
     receipt_task_dict = {}
 
     for receipt in paginated_receipts.items:
-        if receipt.task_id not in receipt_task_dict:
+        if hasattr(receipt, "task_id") and receipt.task_id not in receipt_task_dict:
             receipt = receipt_service.update_receipt_task_status(receipt)
             receipt_task_dict[receipt.task_id] = {
                 "status": receipt.task_status,

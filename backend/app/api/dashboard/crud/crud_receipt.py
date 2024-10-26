@@ -9,7 +9,6 @@ from app.api.dashboard.model.receipt import (
     ReceiptUpdate,
     ReceiptItem,
 )
-from app.api.task.model.task import CeleryTaskMeta
 from sqlmodel import Session, select, delete
 from sqlmodel.sql.expression import Select
 

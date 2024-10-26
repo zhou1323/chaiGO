@@ -5,6 +5,7 @@ from urllib.parse import quote_plus
 from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
+from celery.backends.database.session import ResultModelBase
 
 load_dotenv()
 # this is the Alembic Config object, which provides
@@ -26,9 +27,8 @@ from sqlmodel import SQLModel
 # Must import used tables
 import app.api.admin.model
 import app.api.dashboard.model
-import app.api.task.model
 
-target_metadata = SQLModel.metadata
+target_metadata = [SQLModel.metadata, ResultModelBase.metadata]
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
